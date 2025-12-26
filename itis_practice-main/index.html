@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Разметка этажа и комнат</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #333;
+            color: white;
+            padding: 15px 20px;
+        }
+
+        .controls {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .control-group label {
+            font-weight: bold;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            background: #e9ecef;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #dee2e6;
+        }
+
+        button:disabled {
+            background: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        button.active {
+            background: #007bff;
+            color: white;
+        }
+
+        select, input {
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: flex;
+            height: 700px;
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: #f0f0f0;
+            overflow: auto;
+        }
+
+        #canvas {
+            background: white;
+            display: block;
+        }
+
+        .sidebar {
+            overflow-y: auto; 
+            width: 350px;
+            border-left: 1px solid #dee2e6;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #fafafa;
+        }
+
+        .panel {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        .panel h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .room-list {
+            height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+
+        .room-list-item {
+            padding: 5px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .room-list-item:hover {
+            background: #f0f0f0;
+        }
+
+        .room-list-item.selected {
+            background: #007bff;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .legend {
+            display: grid;
+            flex-direction: column;
+            gap: 5px;
+            align-items: center;
+        }
+
+         .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 2px 0;
+        }
+         
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+        }
+         
+        .status-bar {
+            padding: 10px 15px;
+            background: #e9ecef;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+         #tooltip {
+            position: absolute;
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Разметка этажа и комнат</h1>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <button id="loadJsonBtn">Загрузить JSON данные</button>
+                <button id="loadImageBtn" disabled>Загрузить схему этажа</button>
+                <button id="loadFromFileBtn">Загрузить координаты из файла</button>
+            </div>
+
+            <div class="control-group">
+                <label>Здание:</label>
+                <select id="buildingSelect">
+                    <option value="">Не выбрано</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Этаж:</label>
+                <select id="floorSelect">
+                    <option value="">Не выбран</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <button id="startFloorBtn" disabled>Разметка этажа</button>
+                <button id="finishFloorBtn" disabled>Завершить разметку этажа</button>
+            </div>
+
+            <div class="control-group">
+                <button id="startRoomBtn" disabled>Создание комнаты</button>
+                <button id="finishRoomBtn" disabled>Завершить комнату</button>
+            </div>
+
+            <div class="control-group">
+                <button id="undoBtn" disabled>Отменить точку</button>
+                <button id="saveBtn" disabled>Сохранить координаты в файл</button>
+                <button id="exportHtmlBtn" disabled>Экспортировать в HTML</button>
+            </div>
+
+            <div class="control-group zoom-controls">
+                <button id="zoomInBtn" disabled>Приблизить +</button>
+                <button id="zoomOutBtn" disabled>Отдалить -</button>
+                <span id="zoomLabel">Масштаб: 100%</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="canvas"></canvas>
+            </div>
+
+            <div class="sidebar">
+                <div class="panel">
+                    <h3>Доступные комнаты (из JSON):</h3>
+                    <div class="room-list" id="jsonRoomsList"></div>
+                </div>
+
+                <div class="panel">
+                    <h3>Размеченные комнаты:</h3>
+                    <div class="room-list" id="annotatedRoomsList"></div>
+
+                    <div class="form-group">
+                        <label>Название комнаты:</label>
+                        <input type="text" id="roomNameInput">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Тип помещения:</label>
+                        <select id="roomTypeSelect"></select>
+                    </div>
+
+                    <div class="control-group">
+                        <button id="applyChangesBtn" disabled>Применить (имя/тип)</button>
+                        <button id="deleteRoomBtn" disabled>Удалить комнату</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Легенда:</h3>
+                    <div class="legend" id="legend"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar" id="statusBar">
+            Шаг 1: Загрузите JSON данные
+        </div>
+    </div>
+
+    <input type="file" id="jsonFileInput" accept=".json" class="hidden">
+    <input type="file" id="imageFileInput" accept="image/*" class="hidden">
+    <input type="file" id="coordsFileInput" accept=".txt" class="hidden">
+
+    <script src="app.js"></script>
+</body>
+</html>
